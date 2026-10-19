@@ -1,6 +1,6 @@
 #!/bin/sh
 # Bootstrap a Mac from okbytes/dotfiles, okbytes/skills and okbytes/pi. Safe to rerun.
-#   sh -c "$(curl -fsSL https://raw.githubusercontent.com/okbytes/dotfiles/main/seed.sh)"
+#   sh -c "$(curl -fsSL https://raw.githubusercontent.com/okbytes/dotfiles/main/install.sh)"
 set -eu
 
 if ! command -v brew >/dev/null 2>&1; then
@@ -34,14 +34,14 @@ if [ ! -e "$HOME/.pi/agent/settings.json" ]; then
   echo "pi: seeded settings.json"
 fi
 
-# link TARGET SOURCE: make TARGET a symlink to SOURCE. A real directory there moves under ~/.seed.bak,
+# link TARGET SOURCE: make TARGET a symlink to SOURCE. A real directory there moves under ~/.dotfiles.bak,
 # outside the skills and extensions folders so nothing keeps loading it.
 link() {
   if [ -L "$1" ]; then
     [ "$(readlink "$1")" = "$2" ] && return
     rm "$1"
   elif [ -e "$1" ]; then
-    bak="$HOME/.seed.bak${1#"$HOME"}"
+    bak="$HOME/.dotfiles.bak${1#"$HOME"}"
     mkdir -p "$(dirname "$bak")" && mv "$1" "$bak"
     echo "moved $1 to $bak"
   fi
@@ -49,9 +49,11 @@ link() {
   ln -s "$2" "$1"
   echo "linked $1 -> $2"
 }
-link "$HOME/.claude/skills/pi" "$HOME/code/skills/pi"
-link "$HOME/.claude/skills/clear-concise-prose" "$HOME/code/skills/clear-concise-prose"
-link "$HOME/.agents/skills/clear-concise-prose" "$HOME/code/skills/clear-concise-prose"
+for skill in "$HOME"/code/skills/*/; do
+  skill=${skill%/}
+  link "$HOME/.claude/skills/${skill##*/}" "$skill"
+  link "$HOME/.agents/skills/${skill##*/}" "$skill"
+done
 link "$HOME/.pi/agent/extensions" "$HOME/code/pi/extensions"
 link "$HOME/.pi/agent/themes" "$HOME/code/pi/themes"
 echo "done"
