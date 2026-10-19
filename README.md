@@ -13,3 +13,7 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/okbytes/dotfiles/main/inst
 ## Pi settings
 
 `~/.pi/agent/settings.json` comes from `settings.json` in the pi repo, copied only when the file does not already exist. Pi rewrites it at runtime, so it is a copy rather than a symlink and local changes stay local.
+
+## Agent instructions
+
+`~/.agents/AGENTS.md` holds the instructions every agent on the machine reads. `~/.claude/CLAUDE.md`, `~/.config/opencode/AGENTS.md` and `~/.pi/agent/AGENTS.md` are symlinks to it, so edit it in one place.
