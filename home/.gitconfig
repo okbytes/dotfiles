@@ -1,0 +1,74 @@
+[user]
+  name = Brett Flora
+[include]
+  path = ~/.gitconfig.local
+[github]
+  user = okbytes
+  token = token
+[core]
+  whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
+  excludesfile = ~/.gitignore
+  ignorecase = false
+  symlinks = false
+[alias]
+  m = commit --amend --no-edit
+  cm = commit -m
+  st = stash
+  sw = switch
+  br = branch
+  pls = push --force-with-lease
+  nuke = reset --hard
+  unc = reset --soft HEAD~1
+  skip = update-index --skip-worktree
+  unskip = update-index --no-skip-worktree
+  mrg = !git fetch origin main && git merge origin/main --no-edit
+  pr = !gh pr create --fill --draft
+  co = "!f() { \
+    if [ $# -gt 0 ]; then git switch \"$@\"; return $?; fi; \
+    b=$(git branch --sort=-committerdate --format='%(if)%(HEAD)%(then)%(else)%(refname:short)%(end)' | sed '/^$/d' | fzb); \
+    if [ -n \"$b\" ]; then git switch \"$b\"; fi; \
+  }; f"
+  sy = "!f() { \
+    c=$(git branch --show-current); \
+    git fetch || return $?; \
+    if [ \"$c\" = main ]; then \
+      git pull --rebase || return $?; \
+    else \
+      git branch -f main origin/main 2>/dev/null || git fetch origin main:main 2>/dev/null; \
+      git rebase origin/main || return $?; \
+    fi; \
+    closed=$(gh pr list --state closed --author @me --limit 100 --json headRefName -q '.[].headRefName' 2>/dev/null) || return 0; \
+    [ -n \"$closed\" ] || return 0; \
+    git branch --format='%(refname:short)' | while IFS= read -r b; do \
+      case \"$b\" in main|\"$c\") continue;; esac; \
+      if printf '%s\\n' \"$closed\" | grep -qx -- \"$b\"; then \
+        git branch -D \"$b\" >/dev/null 2>&1 && echo \"● Deleted $b (PR closed)\"; \
+      fi; \
+    done; \
+  }; f"
+[diff]
+  colorMoved = zebra
+[merge]
+  conflictstyle = zdiff3
+[push]
+  default = simple
+  autoSetupRemote = true
+[fetch]
+  prune = true
+[pull]
+  rebase = true
+[rerere]
+  enabled = true
+[rebase]
+  autoStash = true
+[color]
+  ui = true
+[init]
+  defaultBranch = main
+[advice]
+  pushNonFastForward = false
+[filter "lfs"]
+  process = git-lfs filter-process
+  required = true
+  clean = git-lfs clean -- %f
+  smudge = git-lfs smudge -- %f

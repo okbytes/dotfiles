@@ -1,0 +1,5 @@
+export EDITOR="zed --wait"
+export VISUAL="zed"
+export GOBIN="$HOME/go/bin"
+export BUN_INSTALL="$HOME/.bun"
+[[ -r "$HOME/.path.zsh" ]] && . "$HOME/.path.zsh"
