@@ -2,9 +2,6 @@
   name = Brett Flora
 [include]
   path = ~/.gitconfig.local
-[github]
-  user = okbytes
-  token = token
 [core]
   whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
   excludesfile = ~/.gitignore
