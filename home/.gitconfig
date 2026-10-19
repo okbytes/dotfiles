@@ -32,13 +32,17 @@
       git branch -f main origin/main 2>/dev/null || git fetch origin main:main 2>/dev/null; \
       git rebase origin/main || return $?; \
     fi; \
-    closed=$(gh pr list --state closed --author @me --limit 100 --json headRefName -q '.[].headRefName' 2>/dev/null) || return 0; \
-    [ -n \"$closed\" ] || return 0; \
     git branch --format='%(refname:short)' | while IFS= read -r b; do \
       case \"$b\" in main|\"$c\") continue;; esac; \
-      if printf '%s\\n' \"$closed\" | grep -qx -- \"$b\"; then \
-        git branch -D \"$b\" >/dev/null 2>&1 && echo \"● Deleted $b (PR closed)\"; \
-      fi; \
+      gh pr list --head \"$b\" --state closed --json number,headRefOid,isCrossRepository \
+        -q '.[] | select(.isCrossRepository | not) | [.number, .headRefOid] | @tsv' </dev/null 2>/dev/null | \
+      while read -r n o; do \
+        git cat-file -e \"$o\" 2>/dev/null || git fetch -q origin \"pull/$n/head\" </dev/null 2>/dev/null; \
+        if git merge-base --is-ancestor \"$b\" \"$o\" 2>/dev/null; then \
+          git branch -D \"$b\" >/dev/null 2>&1 && echo \"● Deleted $b (PR #$n closed)\"; \
+          break; \
+        fi; \
+      done; \
     done; \
   }; f"
 [diff]
