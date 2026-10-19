@@ -1,0 +1,44 @@
+[include]
+  path = ~/.gitconfig.local
+[core]
+  whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
+  excludesfile = ~/.gitignore
+  ignorecase = false
+  symlinks = false
+[alias]
+  st = stash
+  sw = switch
+  br = branch
+  pls = push --force-with-lease
+  nuke = reset --hard
+  unc = reset --soft HEAD~1
+  skip = update-index --skip-worktree
+  unskip = update-index --no-skip-worktree
+  mrg = !git fetch origin main && git merge origin/main --no-edit
+  pr = !gh pr create --fill --draft
+[diff]
+  colorMoved = zebra
+[merge]
+  conflictstyle = zdiff3
+[push]
+  default = simple
+  autoSetupRemote = true
+[fetch]
+  prune = true
+[pull]
+  rebase = true
+[rerere]
+  enabled = true
+[rebase]
+  autoStash = true
+[color]
+  ui = true
+[init]
+  defaultBranch = main
+[advice]
+  pushNonFastForward = false
+[filter "lfs"]
+  process = git-lfs filter-process
+  required = true
+  clean = git-lfs clean -- %f
+  smudge = git-lfs smudge -- %f
