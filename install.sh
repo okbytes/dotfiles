@@ -15,8 +15,13 @@ else
 fi
 
 find "$src" -type f ! -name .DS_Store | sort | while IFS= read -r file; do
-  dest=$HOME/${file#"$src"/}
-  if [ -e "$dest" ] || [ -L "$dest" ]; then
+  rel=${file#"$src"/}
+  dest=$HOME/$rel
+  # A new Linux account starts with copies of /etc/skel, such as .bashrc; an untouched one holds nothing of yours.
+  if [ -f "$dest" ] && [ ! -L "$dest" ] && [ -f "/etc/skel/$rel" ] && cmp -s "$dest" "/etc/skel/$rel"; then
+    cp "$file" "$dest"
+    echo "replaced $dest (unchanged from /etc/skel)"
+  elif [ -e "$dest" ] || [ -L "$dest" ]; then
     echo "kept $dest"
   else
     mkdir -p "$(dirname "$dest")"

@@ -1,9 +1,5 @@
 #!/bin/zsh
 
-export EDITOR="zed --wait"
-export VISUAL="zed"
-
-export GOBIN="$HOME/go/bin"
-export BUN_INSTALL="$HOME/.bun"
-
-[[ -r "$HOME/.path.zsh" ]] && . "$HOME/.path.zsh"
+# Keep one copy of each directory when .profile runs again and prepends its list.
+typeset -U path PATH
+[[ -r "$HOME/.profile" ]] && . "$HOME/.profile"

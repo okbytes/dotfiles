@@ -1,0 +1,116 @@
+# Aliases, functions, and the prompt for interactive bash and zsh, sourced by .bashrc and .zshrc.
+# Write for both shells and for both GNU and BSD tools.
+
+alias ..="cd ../"
+alias ~="cd $HOME"
+alias c="clear"
+# BSD ls colors with -G, which GNU ls takes as --no-group.
+case $OSTYPE in
+  darwin*|*bsd*) alias ll="ls -FGhA" ls="ls -FGh" ;;
+  *) alias ll="ls -FhA --color=auto" ls="ls -Fh --color=auto" ;;
+esac
+
+alias s="git status -sb"
+alias cm="git commit -m"
+alias ga="git add ."
+alias gm="git commit --amend --no-edit"
+alias mm="git switch main"
+
+alias py="python3"
+
+lg() {
+  local fmt='%C(auto)%h%C(auto)%d %s %C(cyan)%an %C(green)%ar%Creset'
+  local count=5
+  case ${1-} in
+    ''|*[!0-9]*) ;;
+    *) count=$1; shift ;;
+  esac
+  git log --pretty=format:"$fmt" -n "$count" "$@"
+}
+co() {
+  local b
+  if (( $# > 0 )); then
+    git switch "$@"
+    return $?
+  fi
+  b=$(git branch --sort=-committerdate --format='%(if)%(HEAD)%(then)%(else)%(refname:short)%(end)' | sed '/^$/d' | fzb) || return $?
+  [[ -n "$b" ]] && git switch "$b"
+}
+sy() {
+  local prs b o n state
+  if [[ $(git branch --show-current) != main ]]; then
+    printf '%s\n' 'sy: only for main' >&2
+    return 1
+  fi
+  git pull --rebase || return $?
+  prs=$(gh pr list --state closed --limit 200 --json headRefName,headRefOid,number,state \
+    -q '.[] | [.headRefName, .headRefOid, .number, (.state | ascii_downcase)] | @tsv') || return $?
+  while IFS=$'\t' read -r b o n state; do
+    # Keep local commits that were never part of the closed PR.
+    git merge-base --is-ancestor "refs/heads/$b" "$o" 2>/dev/null || continue
+    git branch -D -- "$b" >/dev/null && printf '%s\n' "● Deleted $b (PR #$n $state)"
+  done <<< "$prs"
+}
+quik() {
+  local msg="${1:-WIP: $(date '+%a %b %-d, %Y %-I:%M %p')}"
+  git stash push --staged -m "$msg"
+}
+brewd() {
+  { brew leaves; brew list --cask; } |
+    xargs brew deps --installed --for-each 2>/dev/null |
+    sed "s/^.*:/$(tput setaf 4)&$(tput sgr0)/"
+}
+
+# Prompt: the git operation in progress, a green arrow inside a virtualenv, then an arrow that's
+# yellow, or magenta over ssh. Both shells share one PS1; only the hook and color markers differ.
+export VIRTUAL_ENV_DISABLE_PROMPT=1
+
+# Name the git operation in progress by reading .git directly; vcs_info and __git_ps1 fork git for the same answer.
+prompt_precmd() {
+  local dir=$PWD gitdir
+  prompt_git_action=
+  until [[ -e $dir/.git ]]; do
+    [[ -n $dir ]] || return
+    dir=${dir%/*}
+  done
+  gitdir=$dir/.git
+  if [[ -f $gitdir ]]; then
+    IFS= read -r gitdir < "$gitdir"
+    gitdir=${gitdir#gitdir: }
+    [[ $gitdir == /* ]] || gitdir=$dir/$gitdir
+  fi
+  if [[ -d $gitdir/rebase-merge || -d $gitdir/rebase-apply ]]; then prompt_git_action=rebase
+  elif [[ -f $gitdir/MERGE_HEAD ]]; then prompt_git_action=merge
+  elif [[ -f $gitdir/CHERRY_PICK_HEAD ]]; then prompt_git_action=cherry-pick
+  elif [[ -f $gitdir/REVERT_HEAD ]]; then prompt_git_action=revert
+  elif [[ -f $gitdir/BISECT_LOG ]]; then prompt_git_action=bisect
+  fi
+}
+
+# Run prompt_precmd before each prompt, and mark color codes as taking no width.
+if [[ -n ${ZSH_VERSION-} ]]; then
+  setopt PROMPT_SUBST
+  autoload -Uz add-zsh-hook
+  add-zsh-hook precmd prompt_precmd
+  prompt_open='%{' prompt_close='%}'
+else
+  case $PROMPT_COMMAND in
+    *prompt_precmd*) ;;
+    *) PROMPT_COMMAND="prompt_precmd${PROMPT_COMMAND:+; $PROMPT_COMMAND}" ;;
+  esac
+  prompt_open=$'\001' prompt_close=$'\002'
+fi
+prompt_yellow=$prompt_open$'\e[33m'$prompt_close
+prompt_green=$prompt_open$'\e[32m'$prompt_close
+prompt_arrow_color=$prompt_open$'\e[38;2;255;216;102m'$prompt_close
+[[ -n ${SSH_CONNECTION-} ]] && prompt_arrow_color=$prompt_open$'\e[35m'$prompt_close
+prompt_reset=$prompt_open$'\e[39m'$prompt_close
+unset prompt_open prompt_close
+
+# Plain ASCII when the locale can't count the arrow's width (ssh without a UTF-8 locale).
+case ${LC_ALL:-${LC_CTYPE:-${LANG-}}} in
+  *[Uu][Tt][Ff]-8*|*[Uu][Tt][Ff]8*) prompt_arrow='❱' ;;
+  *) prompt_arrow='>' ;;
+esac
+
+PS1='$prompt_yellow${prompt_git_action:+$prompt_git_action }$prompt_green${VIRTUAL_ENV:+$prompt_arrow}$prompt_arrow_color$prompt_arrow$prompt_reset '
