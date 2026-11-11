@@ -11,9 +11,9 @@ case $OSTYPE in
 esac
 
 alias s="git status -sb"
-alias cm="git commit -m"
+alias cm="git cm"
 alias ga="git add ."
-alias gm="git commit --amend --no-edit"
+alias gm="git m"
 alias mm="git switch main"
 
 alias py="python3"

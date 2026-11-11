@@ -7,6 +7,8 @@
   st = stash
   sw = switch
   br = branch
+  m = git commit --amend --no-edit
+  cm = git commit --message
   pls = push --force-with-lease
   nuke = reset --hard
   unc = reset --soft HEAD~1
