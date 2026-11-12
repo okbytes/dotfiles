@@ -1,18 +1,14 @@
 #!/bin/sh
-# Seed ~ with this repository's home/ files, never replacing one that already exists. Safe to rerun.
-#   sh -c "$(curl -fsSL https://raw.githubusercontent.com/okbytes/dotfiles/main/install.sh)"
+# Copy home/ into ~. Never replace a file that already exists, except an untouched /etc/skel copy.
+# Run from a checkout: sh install.sh
 set -eu
 
-if [ -f "$0" ] && [ -d "$(dirname "$0")/home" ]; then
-  src=$(CDPATH= cd -P "$(dirname "$0")/home" && pwd)
-else
-  tmp=$(mktemp -d)
-  trap 'rm -rf "$tmp"' EXIT
-  trap 'exit 1' HUP INT TERM
-  curl -fsSL https://github.com/okbytes/dotfiles/archive/refs/heads/main.tar.gz -o "$tmp/dotfiles.tar.gz"
-  tar -xzf "$tmp/dotfiles.tar.gz" -C "$tmp"
-  src=$tmp/dotfiles-main/home
+cd -P "$(dirname "$0")"
+if [ ! -d home ]; then
+  echo "install.sh: run it from a checkout of this repository" >&2
+  exit 1
 fi
+src=$(CDPATH= cd -P home && pwd)
 
 find "$src" -type f ! -name .DS_Store | sort | while IFS= read -r file; do
   rel=${file#"$src"/}

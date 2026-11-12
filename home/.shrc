@@ -1,6 +1,3 @@
-# Aliases, functions, and the prompt for interactive bash and zsh, sourced by .bashrc and .zshrc.
-# Write for both shells and for both GNU and BSD tools.
-
 alias ..="cd ../"
 alias ~="cd $HOME"
 alias c="clear"
@@ -29,26 +26,23 @@ lg() {
 }
 co() {
   local b
-  if (( $# > 0 )); then
-    git switch "$@"
-    return $?
-  fi
-  b=$(git branch --sort=-committerdate --format='%(if)%(HEAD)%(then)%(else)%(refname:short)%(end)' | sed '/^$/d' | fzb) || return $?
-  [[ -n "$b" ]] && git switch "$b"
+  if (( $# )); then git switch "$@"; return; fi
+  b=$(git branch --sort=-committerdate --format='%(HEAD)%(refname:short)' | sed -n 's/^ //p' | fzb) &&
+    git switch "$b"
 }
 sy() {
-  local prs b o n state
+  local prs b oid
   if [[ $(git branch --show-current) != main ]]; then
     printf '%s\n' 'sy: only for main' >&2
     return 1
   fi
-  git pull --rebase || return $?
-  prs=$(gh pr list --state closed --limit 200 --json headRefName,headRefOid,number,state \
-    -q '.[] | [.headRefName, .headRefOid, .number, (.state | ascii_downcase)] | @tsv') || return $?
-  while IFS=$'\t' read -r b o n state; do
+  git pull --rebase || return
+  prs=$(gh pr list --state closed --limit 200 --json headRefName,headRefOid \
+    -q '.[] | [.headRefName, .headRefOid] | @tsv') || return
+  while IFS=$'\t' read -r b oid; do
     # Keep local commits that were never part of the closed PR.
-    git merge-base --is-ancestor "refs/heads/$b" "$o" 2>/dev/null || continue
-    git branch -D -- "$b" >/dev/null && printf '%s\n' "● Deleted $b (PR #$n $state)"
+    git merge-base --is-ancestor "refs/heads/$b" "$oid" 2>/dev/null || continue
+    git branch -D -- "$b"
   done <<< "$prs"
 }
 quik() {

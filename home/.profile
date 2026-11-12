@@ -1,8 +1,3 @@
-#!/bin/sh
-
-# Environment for every shell, in POSIX sh. Login shells read it directly or through
-# .bash_profile, and zsh sources it from .zshenv and .zprofile.
-
 export HOMEBREW_NO_ENV_HINTS=1
 export HOMEBREW_NO_ASK=1
 export HOMEBREW_CASK_OPTS="--appdir=~/Applications"

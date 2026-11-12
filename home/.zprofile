@@ -1,4 +1,2 @@
-#!/bin/zsh
-
-# Again, after macOS's /etc/zprofile has reordered PATH.
+typeset -U path PATH
 [[ -r "$HOME/.profile" ]] && . "$HOME/.profile"
